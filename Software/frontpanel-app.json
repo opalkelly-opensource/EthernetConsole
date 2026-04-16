@@ -1,0 +1,16 @@
+{
+    "appGuid": "c85a4d0f-c81a-4ce8-a623-8c7bfec2020f",
+    "name": "EthernetConsole",
+    "version": "1.0.0",
+    "author": "Opal Kelly Incorporated",
+    "summary": "FrontPanel EthernetConsole Example App",
+    "description": "FrontPanel EthernetConsole Example App",
+    "icon": { "source": "" },
+    "deviceBindings": [
+        { "name": "EthernetConsole Device", "description": "FrontPanel EthernetConsole Example App" }
+    ],
+    "initialContentSize": {
+        "width": 1086,
+        "height": 750
+    }
+}

@@ -1,0 +1,131 @@
+/**
+ * Copyright (c) 2024 Opal Kelly Incorporated
+ *
+ * This source code is licensed under the FrontPanel license.
+ * See the LICENSE file found in the root directory of this project.
+ */
+
+import React from "react";
+
+import "./FrontPanelNumberDisplay.css";
+
+import { NumberDisplay } from "../../primitives";
+
+import FrontPanelNumberDisplayProps from "./FrontPanelNumberDisplay.props";
+
+import { FrontPanelContext } from "../../contexts";
+
+import { CalculateBitLength } from "../../core";
+
+import { IFPGADataPortClassic, WIREOUT_ADDRESS_RANGE } from "@opalkelly/frontpanel-platform-api";
+
+type FrontPanelNumberDisplayElement = React.ElementRef<typeof NumberDisplay>;
+
+interface FrontPanelNumberDisplayCombinedProps
+    extends Omit<
+            React.ComponentPropsWithoutRef<typeof NumberDisplay>,
+            "value" | "maximumValue" | "minimumValue"
+        >,
+        FrontPanelNumberDisplayProps {}
+
+export type { FrontPanelNumberDisplayCombinedProps };
+
+/**
+ * `FrontPanelNumberDisplay` is a React component that renders a number display to represent the value of a WireOut endpoint using
+ * binary, octal, decimal, or hexadecimal numeral systems. It also allows to optionally set the decimal scale of the number when
+ * using the decimal numeral system.
+ *
+ * @component
+ * @param {object} props - Properties passed to component
+ * @param {React.Ref} forwardedRef - Forwarded ref for the number display
+ *
+ * @returns {React.Node} The rendered FrontPanelNumberDisplay component
+ *
+ * @example
+ * ```jsx
+ * <FrontPanelNumberDisplay
+ *     fpEndpoint={{epAddress: 0x20, bitOffset: 1}}
+ *     maximumValue=0xffffffff />
+ * ```
+ */
+const FrontPanelNumberDisplay = React.forwardRef<
+    FrontPanelNumberDisplayElement,
+    FrontPanelNumberDisplayCombinedProps
+>((props, forwardedRef) => {
+    const [value, setValue] = React.useState<bigint>(0n);
+
+    const { fpgaDataPort, workQueue, eventSource } = React.useContext(FrontPanelContext);
+
+    const { maximumValue, fpEndpoint, ...rootProps } = props;
+
+    const targetBitLength: number = React.useMemo(() => {
+        return CalculateBitLength(maximumValue);
+    }, [maximumValue]);
+
+    const targetWireSpanBitMask =
+        ((1n << BigInt(targetBitLength)) - 1n) << BigInt(fpEndpoint.bitOffset);
+
+    const onUpdateWireValue = React.useCallback(
+        (sender?: IFPGADataPortClassic): void => {
+            if ((sender != null) && (workQueue != null)) {
+                // Get the wire value for the endpoint
+                let sourceWireValue = sender.getWireOutValue(fpEndpoint.epAddress);
+                let targetWireBitMask = targetWireSpanBitMask & 0xffffffffn;
+                let sourceSpanValue =
+                    (BigInt(sourceWireValue) & targetWireBitMask) >> BigInt(fpEndpoint.bitOffset);
+
+                if (targetWireSpanBitMask > 0xffffffffn) {
+                    // The operations spans multiple endpoints
+                    let currentWireSpanBitOffset = 32n - BigInt(fpEndpoint.bitOffset);
+                    let currentWireSpanBitMask = targetWireSpanBitMask >> 32n;
+
+                    for (
+                        let sourceWireAddress = fpEndpoint.epAddress + 1;
+                        (sourceWireAddress <= WIREOUT_ADDRESS_RANGE.maximum) &&
+                        (currentWireSpanBitMask > 0n);
+                        sourceWireAddress++
+                    ) {
+                        // Get the wire value for the next endpoint
+                        sourceWireValue = sender.getWireOutValue(sourceWireAddress);
+                        targetWireBitMask = currentWireSpanBitMask & 0xffffffffn;
+                        sourceSpanValue |=
+                            (BigInt(sourceWireValue) & targetWireBitMask) <<
+                            currentWireSpanBitOffset;
+
+                        currentWireSpanBitOffset += 32n;
+                        currentWireSpanBitMask >>= 32n;
+                    }
+                }
+
+                setValue(sourceSpanValue);
+            } else {
+                setValue(0n);
+            }
+        },
+        [workQueue, fpEndpoint, targetWireSpanBitMask]
+    );
+
+    React.useEffect(() => {
+        onUpdateWireValue(fpgaDataPort);
+
+        const subscription = eventSource?.wireOutValuesChangedEvent.subscribe(onUpdateWireValue);
+
+        return () => {
+            subscription?.cancel();
+        };
+    }, [fpgaDataPort, eventSource, onUpdateWireValue]);
+
+    return (
+        <NumberDisplay
+            {...rootProps}
+            ref={forwardedRef}
+            maximumValue={maximumValue}
+            minimumValue={0n}
+            value={value}
+        />
+    );
+});
+
+FrontPanelNumberDisplay.displayName = "FrontPanelNumberDisplay";
+
+export default FrontPanelNumberDisplay;
