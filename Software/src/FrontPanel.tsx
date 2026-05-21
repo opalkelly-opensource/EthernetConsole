@@ -1,72 +1,57 @@
 /**
- * Copyright (c) 2024-2025 Opal Kelly Incorporated
+ * Copyright (c) 2026 Opal Kelly Incorporated
  *
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  */
 
-import { Component } from "react";
+import * as React from "react";
 
-import {
-    IFPGADataPortClassic,
-    WorkQueue
-} from "@opalkelly/frontpanel-platform-api";
+import { Flex } from "@radix-ui/themes";
 
-import { FPGADataPortClassicPeriodicUpdateTimer } from "./FPGADataPortClassicPeriodicUpdateTimer";
-
-import { FrontPanel as FrontPanelContext } from "./frontpanel-components";
+import { IFPGADataPortClassic, WorkQueue } from "@opalkelly/frontpanel-platform-api";
 
 import EthernetPortView from "./EthernetPortView";
+import { EthernetPortDriver } from "./EthernetPortDriver";
+import { EthernetPortA, EthernetPortC } from "./EthernetPorts";
 
+import "./controls.css";
 import "./FrontPanel.css";
-import EthernetPortA from "./EthernetPortA";
-import EthernetPortC from "./EthernetPortC";
 
 export interface FrontPanelProps {
-    name: string;
     fpgaDataPort: IFPGADataPortClassic;
     workQueue: WorkQueue;
+    portCDetected?: boolean;
 }
 
-export interface FrontPanelState {
-    updateTimer: FPGADataPortClassicPeriodicUpdateTimer;
-}
+class FrontPanel extends React.Component<FrontPanelProps> {
+    private readonly portADriver: EthernetPortDriver;
+    private readonly portCDriver: EthernetPortDriver;
 
-/**
- * Front Panel Component used to display and control the Ethernet Ports.
- */
-class FrontPanel extends Component<FrontPanelProps, FrontPanelState> {
     constructor(props: FrontPanelProps) {
         super(props);
-
-        this.state = {
-            updateTimer: new FPGADataPortClassicPeriodicUpdateTimer(this.props.fpgaDataPort, this.props.workQueue, 10)
-        };
-    }
-
-    componentDidMount() {
-        this.state.updateTimer.start();
-    }
-
-    componentWillUnmount() {
-        this.state.updateTimer.stop();
+        this.portADriver = new EthernetPortDriver(props.fpgaDataPort, EthernetPortA);
+        this.portCDriver = new EthernetPortDriver(props.fpgaDataPort, EthernetPortC);
     }
 
     render() {
+        const { workQueue, portCDetected = false } = this.props;
         return (
-            <div className="okFrontPanel">
-                <FrontPanelContext
-                    fpgaDataPort={this.props.fpgaDataPort}
-                    workQueue={this.props.workQueue}
-                    eventSource={this.state.updateTimer}>
-                    <div className="okControlPanel">
-                        <EthernetPortView label="MAC EX Port A" configuration={EthernetPortA} />
-                    </div>
-                    <div className="okControlPanel">
-                        <EthernetPortView label="MAC EX Port C" configuration={EthernetPortC} />
-                    </div>
-                </FrontPanelContext>
-            </div>
+            <Flex direction="column" gap="3" p="4" width="100%" style={{ minHeight: "100vh" }}>
+                <div className="console">
+                    <EthernetPortView
+                        label="MAC EX Port A"
+                        driver={this.portADriver}
+                        workQueue={workQueue}
+                    />
+                    <EthernetPortView
+                        label="MAC EX Port C"
+                        driver={this.portCDriver}
+                        workQueue={workQueue}
+                        moduleDetected={portCDetected}
+                    />
+                </div>
+            </Flex>
         );
     }
 }

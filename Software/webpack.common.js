@@ -50,6 +50,17 @@ module.exports = {
           filename: 'assets/fonts/[name][ext]'
         }
       },
+      {
+        test: /\.(bit)$/i,
+        type: 'asset/resource',
+        sideEffects: true,
+        generator: {
+          filename: (sourcePath) => {
+            const productName = path.dirname(sourcePath.filename).split('/').pop();
+            return `assets/bitfiles/${productName}/[name][ext]`;
+          }
+        }
+      },
     ],
   },
   resolve: {

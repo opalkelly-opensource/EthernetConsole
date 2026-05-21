@@ -33,5 +33,7 @@ The GUI presents two port panels (Port A and Port C), each with controls for Eth
 
 ## Version History
 
+* 1.1.0 (released 2026-05-21)
+  * Modernized UI to use standard React components
 * 1.0.0 (released 2026-04-14)
   * Initial release
