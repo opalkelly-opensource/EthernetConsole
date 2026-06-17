@@ -14,6 +14,7 @@ module.exports = {
       patterns: [
         { from: 'frontpanel-app.json', to: 'frontpanel-app.json' },
         { from: 'APP-INFO.md', to: 'assets/text' },
+        { from: 'assets/ethernet-app-logo.svg', to: 'assets/ethernet-app-logo.svg' },
         { from: 'assets/bitfiles', to: 'assets/bitfiles' }
       ],
     }),
