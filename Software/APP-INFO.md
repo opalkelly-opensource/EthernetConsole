@@ -33,6 +33,8 @@ The GUI presents two port panels (Port A and Port C), each with controls for Eth
 
 ## Version History
 
+* 1.1.2
+  * Updated EthernetConsole to use new packaging script
 * 1.1.1 (released 2026-06-17)
   * Updated EthernetConsole Icon
 * 1.1.0 (released 2026-05-21)

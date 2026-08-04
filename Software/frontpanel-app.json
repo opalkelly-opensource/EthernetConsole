@@ -1,7 +1,7 @@
 {
     "appGuid": "c85a4d0f-c81a-4ce8-a623-8c7bfec2020f",
     "name": "EthernetConsole",
-    "version": "1.1.1",
+    "version": "1.1.2",
     "author": "Opal Kelly Incorporated",
     "summary": "FrontPanel EthernetConsole Example App",
     "description": "FrontPanel EthernetConsole Example App",
